@@ -1,0 +1,40 @@
+name: Deploy IPSL Tool to AWS ECS
+
+on:
+  push:
+    branches:
+      - main  # This workflow runs when you push to the main branch
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Step 2: Log in to AWS ECR
+      - name: Log in to AWS ECR
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+
+      # Step 3: Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t ipsl-tool .
+
+      # Step 4: Tag the Docker image for ECR
+      - name: Tag Docker image
+        run: |
+          docker tag ipsl-tool:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/ipsl-tool:latest
+
+      # Step 5: Push Docker image to AWS ECR
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/ipsl-tool:latest
+
+      # Step 6: Deploy to ECS
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service --cluster ipsl-tool-cluster --service ipsl-tool-service --force-new-deployment --region ${{ secrets.AWS_REGION }}
