@@ -1,0 +1,50 @@
+{
+  "family": "ipsl-tool-cluster",
+  "executionRoleArn": "arn:aws:iam::354918384150:role/ecsTaskExecutionRole",
+  "networkMode": "awsvpc",
+  "containerDefinitions": [
+    {
+      "name": "ipsl-tool-container",
+      "image": "354918384150.dkr.ecr.eu-north-1.amazonaws.com/ipsl-tool:latest",
+      "cpu": 256,
+      "memory": 512,
+      "memoryReservation": 102,
+      "essential": true,
+      "portMappings": [
+        {
+          "name": "ipsl-tool-container-8080-tcp",
+          "containerPort": 8080,
+          "hostPort": 8080,
+          "protocol": "tcp",
+          "appProtocol": "http"
+        }
+      ],
+      "environment": [
+        {
+          "name": "AWS_ACCESS_KEY_ID",
+          "value": "${AWS_ACCESS_KEY_ID}"
+        },
+        {
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "value": "${AWS_SECRET_ACCESS_KEY}"
+        },
+        {
+          "name": "AWS_REGION",
+          "value": "${AWS_REGION}"
+        }
+      ],
+      "environmentFiles": [],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "ulimits": [],
+      "systemControls": []
+    }
+  ],
+  "volumes": [],
+  "cpu": "1024",
+  "memory": "3072",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "tags": []
+}
