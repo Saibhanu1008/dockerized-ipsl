@@ -2,15 +2,18 @@ version: '3'
 
 services:
   ipstool:
-    image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/ipsl-tool:latest
+    image: $${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$${{ secrets.AWS_REGION }}.amazonaws.com/ipsl-tool:latest
     ports:
       - "80:80"  # Adjust port numbers as needed
     environment:
-      - ENV_VAR_NAME=value  # Add any environment variables needed for your app
+      - ENV_VAR_NAME=value  # Add any other environment variables needed for your app
+      - AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+      - AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - AWS_REGION=${{ secrets.AWS_REGION }}
     logging:
       driver: awslogs
       options:
         awslogs-group: /ecs/ipsl-tool
-        awslogs-region: ${{ secrets.AWS_REGION }}
+        awslogs-region: $${{ secrets.AWS_REGION }}
         awslogs-stream-prefix: ecs
-    # entrypoint: ["sh", "-c", "echo 'Deploying image: ${IMAGE_NAME}' && exec your_main_application_command"]
+    entrypoint: ["sh", "-c", "echo 'Deploying image: ${IMAGE_NAME}' && exec your_main_application_command"]
