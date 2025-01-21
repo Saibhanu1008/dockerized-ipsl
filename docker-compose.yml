@@ -2,7 +2,7 @@ version: '3'
 
 services:
   ipstool:
-    image: $${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$${{ secrets.AWS_REGION }}.amazonaws.com/ipsl-tool:latest
+    image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/ipsl-tool:latest
     ports:
       - "80:80"  # Adjust port numbers as needed
     environment:
@@ -11,6 +11,6 @@ services:
       driver: awslogs
       options:
         awslogs-group: /ecs/ipsl-tool
-        awslogs-region: $${{ secrets.AWS_REGION }}
+        awslogs-region: ${{ secrets.AWS_REGION }}
         awslogs-stream-prefix: ecs
-    entrypoint: ["sh", "-c", "echo 'Deploying image: ${IMAGE_NAME}' && exec your_main_application_command"]
+    # entrypoint: ["sh", "-c", "echo 'Deploying image: ${IMAGE_NAME}' && exec your_main_application_command"]
