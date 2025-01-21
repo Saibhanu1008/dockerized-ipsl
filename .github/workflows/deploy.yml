@@ -34,10 +34,20 @@ jobs:
 
       - name: Delete old images from ECR
         run: |
-          # List all image tags and delete all but the latest
-          IMAGE_TAG=$(aws ecr list-images --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --query 'imageIds | sort_by(@, &imagePushedAt) | [-1].imageTag' --output text)
-          echo "Deleting old images from ECR"
-          aws ecr batch-delete-image --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --image-ids imageTag=$IMAGE_TAG
+          # Fetch the latest image digest
+          LATEST_IMAGE_DIGEST=$(aws ecr describe-images --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --query 'sort_by(imageDetails, &imagePushedAt)[-1].imageDigest' --output text)
+          echo "Latest image digest: $LATEST_IMAGE_DIGEST"
+
+          # List all image digests except the latest
+          IMAGES_TO_DELETE=$(aws ecr describe-images --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --query "imageDetails[?imageDigest!='${LATEST_IMAGE_DIGEST}'].imageDigest" --output json)
+          
+          # Check if there are images to delete
+          if [ "$IMAGES_TO_DELETE" != "[]" ]; then
+            echo "Deleting old images from ECR"
+            aws ecr batch-delete-image --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --image-ids "$(echo $IMAGES_TO_DELETE | jq -c '.[] | {imageDigest: .}')"
+          else
+            echo "No old images to delete"
+          fi
 
       - name: Deploy to ECS
         run: |
