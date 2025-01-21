@@ -20,6 +20,11 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Set environment variables
+        run: |
+          echo "AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
+          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> $GITHUB_ENV
+
       - name: Log in to Amazon ECR
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
@@ -65,7 +70,7 @@ jobs:
 
       - name: Deploy to ECS
         run: |
-          ecs-cli configure --cluster ipsl-cluster --region ${{ secrets.AWS_REGION }} --default-launch-type FARGATE --config-name ecsConfig
+          ecs-cli configure --cluster ipsl-tool-cluster-latest --region ${{ secrets.AWS_REGION }} --default-launch-type FARGATE --config-name ecsConfig
           ecs-cli compose --file docker-compose.yml service up --cluster-config ecsConfig --ecs-profile ecsProfile
 
       - name: Install jq (for JSON processing)
