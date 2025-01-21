@@ -1,47 +1,45 @@
 {
-  "family": "ipsl-tool-cluster",
-  "executionRoleArn": "arn:aws:iam::354918384150:role/ecsTaskExecutionRole",
-  "networkMode": "awsvpc",
-  "requiresCompatibilities": [
-    "FARGATE"
-  ],
-  "cpu": "1024",
-  "memory": "3072",
-  "containerDefinitions": [
-    {
-      "name": "ipsl-tool-container",
-      "image": "354918384150.dkr.ecr.eu-north-1.amazonaws.com/ipsl-tool:latest",
-      "cpu": 256,
-      "memory": 512,
-      "memoryReservation": 102,
-      "portMappings": [
+    "taskDefinitionArn": "arn:aws:ecs:eu-north-1:354918384150:task-definition/ipsl-tool-cluster:1",
+    "containerDefinitions": [
         {
-          "name": "ipsl-tool-container-8080-tcp",
-          "containerPort": 8080,
-          "hostPort": 8080,
-          "protocol": "tcp",
-          "appProtocol": "http"
+            "name": "ipsl-tool-container",
+            "image": "354918384150.dkr.ecr.eu-north-1.amazonaws.com/ipsl-tool:latest",
+            "cpu": 256,
+            "memory": 512,
+            "memoryReservation": 102,
+            "portMappings": [
+                {
+                    "name": "ipsl-tool-container-8080-tcp",
+                    "containerPort": 8080,
+                    "hostPort": 8080,
+                    "protocol": "tcp",
+                    "appProtocol": "http"
+                }
+            ],
+            "essential": true,
+            "environment": [],
+            "environmentFiles": [],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "ulimits": [],
+            "systemControls": []
         }
-      ],
-      "essential": true,
-      "environment": [],
-      "environmentFiles": [],
-      "mountPoints": [],
-      "volumesFrom": [],
-      "ulimits": [],
-      "systemControls": []
-    }
-  ],
-  "revision": 1,
-  "status": "ACTIVE",
-  "placementConstraints": [],
-  "tags": [],
-  "compatibilities": [
-    "EC2",
-    "FARGATE"
-  ],
-  "runtimePlatform": {
-    "cpuArchitecture": "X86_64",
-    "operatingSystemFamily": "LINUX"
-  }
+    ],
+    "family": "ipsl-tool-cluster",
+    "executionRoleArn": "arn:aws:iam::354918384150:role/ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "volumes": [],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "1024",
+    "memory": "3072",
+    "runtimePlatform": {
+        "cpuArchitecture": "X86_64",
+        "operatingSystemFamily": "LINUX"
+    },
+    "registeredAt": "2025-01-20T09:32:57.052Z",
+    "registeredBy": "arn:aws:iam::354918384150:root",
+    "enableFaultInjection": false,
+    "tags": []
 }
