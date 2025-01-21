@@ -3,6 +3,7 @@ version: '3'
 services:
   ipstool:
     image: 354918384150.dkr.ecr.eu-north-1.amazonaws.com/ipsl-tool:latest
+    network_mode: awsvpc  # Set network mode for Fargate
     ports:
       - "80:80"  # Adjust port numbers as needed
     environment:
@@ -15,5 +16,4 @@ services:
         awslogs-group: /ecs/ipsl-tool
         awslogs-region: $${{ secrets.AWS_REGION }}
         awslogs-stream-prefix: ecs
-    network_mode: awsvpc  # Set network mode for Fargate
 
