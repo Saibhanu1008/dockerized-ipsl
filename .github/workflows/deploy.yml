@@ -39,21 +39,11 @@ jobs:
 
       - name: Delete old images from ECR
         run: |
-          # Fetch the latest image digest
           LATEST_IMAGE_DIGEST=$(aws ecr describe-images --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --query 'sort_by(imageDetails, &imagePushedAt)[-1].imageDigest' --output text)
           echo "Latest image digest: $LATEST_IMAGE_DIGEST"
-
-          # List all image digests except the latest
           IMAGES_TO_DELETE=$(aws ecr describe-images --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --query "imageDetails[?imageDigest!='${LATEST_IMAGE_DIGEST}'].imageDigest" --output json)
-
-          # Check if there are images to delete
           if [ "$IMAGES_TO_DELETE" != "[]" ]; then
-            echo "Deleting old images from ECR"
-
-            # Format the JSON for batch-delete-image
             FORMATTED_IMAGE_IDS=$(echo "$IMAGES_TO_DELETE" | jq -c '[.[] | {imageDigest: .}]')
-
-            # Delete the images
             aws ecr batch-delete-image --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --image-ids "$FORMATTED_IMAGE_IDS"
           else
             echo "No old images to delete"
@@ -70,16 +60,14 @@ jobs:
 
       - name: Register ECS task definition
         run: |
-          # Register the ECS task definition with the latest image
-          ecs-cli compose --file docker-compose.yml --project-name ipsl-tool create
+          # Here, we just register the new image version with the existing ECS task definition
+          aws ecs update-service --cluster ipsl-tool-cluster-latest --service dockerized-ipsl \
+            --task-definition ipsl-tool-cluster:1 # Replace '1' with the revision you want to deploy
 
       - name: Deploy to ECS
         run: |
-          # Ensure ECS CLI uses the correct cluster
-          ecs-cli configure --cluster ipsl-tool-cluster-latest --region ${{ secrets.AWS_REGION }} --default-launch-type FARGATE --config-name ecsConfig
-
-          # Check if the service exists and create it if necessary
-          ecs-cli compose --file docker-compose.yml service up --cluster-config ecsConfig --ecs-profile ecsProfile
+          # Ensure ECS CLI uses the correct cluster and Fargate launch type
+          ecs-cli compose --file docker-compose.yml service up --cluster-config ecsConfig --ecs-profile ecsProfile --launch-type FARGATE
 
       - name: Install jq (for JSON processing)
         run: sudo apt-get install -y jq
