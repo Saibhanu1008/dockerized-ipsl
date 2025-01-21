@@ -54,6 +54,11 @@ jobs:
             echo "No old images to delete"
           fi
 
+      - name: Install ECS CLI
+        run: |
+          sudo curl -o /usr/local/bin/ecs-cli https://amazon-ecs-cli.s3.amazonaws.com/ecs-cli-linux-amd64-latest
+          sudo chmod +x /usr/local/bin/ecs-cli
+
       - name: Deploy to ECS
         run: |
           ecs-cli configure --region ${{ secrets.AWS_REGION }} --access-key ${{ secrets.AWS_ACCESS_KEY_ID }} --secret-key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
