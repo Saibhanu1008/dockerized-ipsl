@@ -68,9 +68,14 @@ jobs:
         run: |
           ecs-cli configure profile --access-key ${{ secrets.AWS_ACCESS_KEY_ID }} --secret-key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile-name ecsProfile
 
+      - name: Register ECS task definition
+        run: |
+          # Register the ECS task definition with the latest image
+          ecs-cli compose --file docker-compose.yml --project-name ipsl-tool create
+
       - name: Deploy to ECS
         run: |
-          ecs-cli configure --cluster ipsl-tool-cluster-latest --region ${{ secrets.AWS_REGION }} --default-launch-type FARGATE --config-name ecsConfig
+          # Create a new ECS service or update the existing one using the task definition
           ecs-cli compose --file docker-compose.yml service up --cluster-config ecsConfig --ecs-profile ecsProfile
 
       - name: Install jq (for JSON processing)
