@@ -60,9 +60,34 @@ jobs:
 
       - name: Register ECS task definition
         run: |
-          # Here, we just register the new image version with the existing ECS task definition
-          aws ecs update-service --cluster ipsl-tool-cluster-latest --service dockerized-ipsl \
-            --task-definition ipsl-tool-cluster:1 # Replace '1' with the revision you want to deploy
+          # Register a new revision of the task definition with the updated image
+          aws ecs register-task-definition \
+            --family ipsl-tool-cluster \
+            --network-mode awsvpc \
+            --requires-compatibilities FARGATE \
+            --cpu "256" \
+            --memory "512" \
+            --container-definitions '[{
+              "name": "dockerized-ipsl",
+              "image": "'${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/ipsl-tool:latest'",
+              "essential": true,
+              "portMappings": [{
+                "containerPort": 80,
+                "hostPort": 80,
+                "protocol": "tcp"
+              }]
+            }]'
+
+      - name: Update ECS Service
+        run: |
+          # Update the ECS service to use the new task definition
+          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition ipsl-tool-cluster --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "Using Task Definition ARN: $TASK_DEFINITION"
+          aws ecs update-service \
+            --cluster ipsl-tool-cluster-latest \
+            --service dockerized-ipsl \
+            --task-definition $TASK_DEFINITION \
+            --force-new-deployment
 
       - name: Deploy to ECS
         run: |
