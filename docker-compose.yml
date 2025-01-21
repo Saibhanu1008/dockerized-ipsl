@@ -15,3 +15,5 @@ services:
         awslogs-group: /ecs/ipsl-tool
         awslogs-region: $${{ secrets.AWS_REGION }}
         awslogs-stream-prefix: ecs
+    network_mode: awsvpc  # Set network mode for Fargate
+
