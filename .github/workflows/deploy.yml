@@ -60,34 +60,16 @@ jobs:
 
       - name: Register ECS task definition
         run: |
-          # Register a new revision of the task definition with the updated image
-          aws ecs register-task-definition \
-            --family ipsl-tool-cluster \
-            --network-mode awsvpc \
-            --requires-compatibilities FARGATE \
-            --cpu "256" \
-            --memory "512" \
-            --container-definitions '[{
-              "name": "dockerized-ipsl",
-              "image": "'${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/ipsl-tool:latest'",
-              "essential": true,
-              "portMappings": [{
-                "containerPort": 80,
-                "hostPort": 80,
-                "protocol": "tcp"
-              }]
-            }]'
+          aws ecs register-task-definition --cli-input-json file://ipsl-tool-cluster-revision1.json
 
-      - name: Update ECS Service
+      - name: Update ECS service to use the latest task definition
         run: |
-          # Update the ECS service to use the new task definition
-          TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition ipsl-tool-cluster --query 'taskDefinition.taskDefinitionArn' --output text)
-          echo "Using Task Definition ARN: $TASK_DEFINITION"
-          aws ecs update-service \
-            --cluster ipsl-tool-cluster-latest \
-            --service dockerized-ipsl \
-            --task-definition $TASK_DEFINITION \
-            --force-new-deployment
+          # Get the latest task definition revision ARN
+          TASK_DEFINITION_ARN=$(aws ecs describe-task-definition --task-definition ipsl-tool-cluster | jq -r '.taskDefinition.taskDefinitionArn')
+          echo "Using task definition: $TASK_DEFINITION_ARN"
+
+          # Update ECS service to use the latest task definition
+          aws ecs update-service --cluster ipsl-tool-cluster-latest --service dockerized-ipsl --task-definition $TASK_DEFINITION_ARN
 
       - name: Deploy to ECS
         run: |
@@ -96,3 +78,4 @@ jobs:
 
       - name: Install jq (for JSON processing)
         run: sudo apt-get install -y jq
+
