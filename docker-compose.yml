@@ -2,7 +2,7 @@ version: '3'
 
 services:
   ipstool:
-    image: $${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.$${{ secrets.AWS_REGION }}.amazonaws.com/ipsl-tool:latest
+    image: 354918384150.dkr.ecr.eu-north-1.amazonaws.com/ipsl-tool:latest
     ports:
       - "80:80"  # Adjust port numbers as needed
     environment:
