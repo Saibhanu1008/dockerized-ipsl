@@ -13,3 +13,4 @@ services:
         awslogs-group: /ecs/ipsl-tool
         awslogs-region: $${{ secrets.AWS_REGION }}
         awslogs-stream-prefix: ecs
+    entrypoint: ["sh", "-c", "echo 'Deploying image: ${IMAGE_NAME}' && exec your_main_application_command"]
