@@ -40,11 +40,16 @@ jobs:
 
           # List all image digests except the latest
           IMAGES_TO_DELETE=$(aws ecr describe-images --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --query "imageDetails[?imageDigest!='${LATEST_IMAGE_DIGEST}'].imageDigest" --output json)
-          
+
           # Check if there are images to delete
           if [ "$IMAGES_TO_DELETE" != "[]" ]; then
             echo "Deleting old images from ECR"
-            aws ecr batch-delete-image --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --image-ids "$(echo $IMAGES_TO_DELETE | jq -c '.[] | {imageDigest: .}')"
+
+            # Format the JSON for batch-delete-image
+            FORMATTED_IMAGE_IDS=$(echo "$IMAGES_TO_DELETE" | jq -c '[.[] | {imageDigest: .}]')
+
+            # Delete the images
+            aws ecr batch-delete-image --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --image-ids "$FORMATTED_IMAGE_IDS"
           else
             echo "No old images to delete"
           fi
@@ -53,3 +58,6 @@ jobs:
         run: |
           ecs-cli configure --region ${{ secrets.AWS_REGION }} --access-key ${{ secrets.AWS_ACCESS_KEY_ID }} --secret-key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           ecs-cli compose --file docker-compose.yml service up
+
+      - name: Install jq (for JSON processing)
+        run: sudo apt-get install -y jq
