@@ -75,7 +75,10 @@ jobs:
 
       - name: Deploy to ECS
         run: |
-          # Create a new ECS service or update the existing one using the task definition
+          # Ensure ECS CLI uses the correct cluster
+          ecs-cli configure --cluster ipsl-tool-cluster-latest --region ${{ secrets.AWS_REGION }} --default-launch-type FARGATE --config-name ecsConfig
+
+          # Check if the service exists and create it if necessary
           ecs-cli compose --file docker-compose.yml service up --cluster-config ecsConfig --ecs-profile ecsProfile
 
       - name: Install jq (for JSON processing)
