@@ -1,77 +1,36 @@
-name: Deploy IPSL Tool to AWS ECS
+name: Deploy to ECS
 
 on:
   push:
     branches:
-      - main
+      - main  # Trigger on push to main branch (you can change this as needed)
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
+      # Step 1: Checkout the repository to get the code and ecs-task-definition.json
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Set environment variables
+        
+      # Step 2: Configure AWS CLI with credentials from GitHub secrets
+      - name: Configure AWS CLI
         run: |
-          echo "AWS_ACCOUNT_ID=${{ secrets.AWS_ACCOUNT_ID }}" >> $GITHUB_ENV
-          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> $GITHUB_ENV
-
-      - name: Set up AWS CLI
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Log in to Amazon ECR
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region ${{ secrets.AWS_REGION }}
+        
+      # Step 3: Register ECS Task Definition from the ecs-task-definition.json file
+      - name: Register ECS Task Definition
         run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-
-      - name: Build Docker image
-        run: |
-          docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/ipsl-tool:latest .
-
-      - name: Push Docker image to ECR
-        run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/ipsl-tool:latest
-
-      - name: Delete old images from ECR
-        run: |
-          # Fetch the latest image digest
-          LATEST_IMAGE_DIGEST=$(aws ecr describe-images --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --query 'sort_by(imageDetails, &imagePushedAt)[-1].imageDigest' --output text)
-          echo "Latest image digest: $LATEST_IMAGE_DIGEST"
-
-          # List all image digests except the latest
-          IMAGES_TO_DELETE=$(aws ecr describe-images --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --query "imageDetails[?imageDigest!='${LATEST_IMAGE_DIGEST}'].imageDigest" --output json)
-
-          # Check if there are images to delete
-          if [ "$IMAGES_TO_DELETE" != "[]" ]; then
-            echo "Deleting old images from ECR"
-
-            # Format the JSON for batch-delete-image
-            FORMATTED_IMAGE_IDS=$(echo "$IMAGES_TO_DELETE" | jq -c '[.[] | {imageDigest: .}]')
-
-            # Delete the images
-            aws ecr batch-delete-image --repository-name ipsl-tool --region ${{ secrets.AWS_REGION }} --image-ids "$FORMATTED_IMAGE_IDS"
-          else
-            echo "No old images to delete"
-          fi
-
-      - name: Install ECS CLI
-        run: |
-          sudo curl -o /usr/local/bin/ecs-cli https://amazon-ecs-cli.s3.amazonaws.com/ecs-cli-linux-amd64-latest
-          sudo chmod +x /usr/local/bin/ecs-cli
-
-      - name: Configure ECS CLI profile
-        run: |
-          ecs-cli configure profile --access-key ${{ secrets.AWS_ACCESS_KEY_ID }} --secret-key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile-name ecsProfile
-
+          echo "Registering ECS Task Definition..."
+          aws ecs register-task-definition \
+            --cli-input-json file://ecs-task-definition.json \
+            --region ${{ secrets.AWS_REGION }}
+        
+      # Step 4: Configure ECS CLI and deploy to ECS using Docker Compose
       - name: Deploy to ECS
         run: |
           ecs-cli configure --cluster ipsl-tool-cluster-latest --region ${{ secrets.AWS_REGION }} --default-launch-type FARGATE --config-name ecsConfig
           ecs-cli compose --file docker-compose.yml service up --cluster-config ecsConfig --ecs-profile ecsProfile
-
-      - name: Install jq (for JSON processing)
-        run: sudo apt-get install -y jq
